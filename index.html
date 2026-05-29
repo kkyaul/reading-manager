@@ -538,11 +538,11 @@ async function renderDailyList() {
     const entries = rec?.entries || [];
     const booksHtml = entries.length > 0
       ? entries.map(e => {
-          const icon = e.status === 'start' ? '<span class="icon-start">▸ </span>'
-                     : e.status === 'done'  ? '<span class="icon-done">✓ </span>'
+          const icon = e.status === 'start' ? ' <span class="icon-start">[start]</span>'
+                     : e.status === 'done'  ? ' <span class="icon-done">[done]</span>'
                      : '';
           const page = e.page ? ` <span class="t-dim">p.${e.page}</span>` : '';
-          return `<div class="daily-book-entry">${icon}${e.title}${page}</div>`;
+          return `<div class="daily-book-entry">${e.title}${icon}${page}</div>`;
         }).join('')
       : `<div class="daily-empty">—</div>`;
     return `<div class="daily-row">
