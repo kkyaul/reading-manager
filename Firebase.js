@@ -97,7 +97,7 @@ export async function getSummary(bookId) {
   const snap = await getDoc(summaryDoc(bookId));
   return snap.exists() ? snap.data().content : "";
 }
-
+ 
 // ── Daily Records ────────────────────────────────────────────
 export async function getDailyRecord(date) {
   const snap = await getDoc(dailyDoc(date));

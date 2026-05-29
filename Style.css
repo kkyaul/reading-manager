@@ -518,7 +518,7 @@ body::before {
 }
 .modal-close:hover { color: var(--pink); }
 .modal-body { padding: 12px 16px; }
-
+ 
 /* ── 별점 ───────────────────────────────────────────────── */
 .star-input { display: flex; gap: 4px; }
 .star-btn {
