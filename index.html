@@ -178,8 +178,9 @@
           <label class="t-form-label">장르</label>
           <select class="t-select" id="regGenre">
             <option value="">-- select --</option>
-            <option>소설</option><option>에세이</option>
+            <option>소설</option><option>시/에세이</option>
             <option>자기계발</option><option>경제/경영</option>
+            <option>인문</option>
             <option>역사</option><option>과학</option>
             <option>철학</option><option>심리학</option>
             <option>사회</option><option>예술</option>
@@ -246,13 +247,15 @@
         <label class="t-form-label">장르</label>
         <select class="t-select" id="editGenre">
           <option value="">-- select --</option>
-          <option>소설</option><option>에세이</option>
-          <option>자기계발</option><option>경제/경영</option>
-          <option>역사</option><option>과학</option>
-          <option>철학</option><option>심리학</option>
-          <option>사회</option><option>예술</option>
-          <option>여행</option><option>건강</option>
-          <option>육아</option><option>종교</option><option>기타</option>
+          <option>소설</option><option>시/에세이</option>
+            <option>자기계발</option><option>경제/경영</option>
+            <option>인문</option>
+            <option>역사</option><option>과학</option>
+            <option>철학</option><option>심리학</option>
+            <option>사회</option><option>예술</option>
+            <option>여행</option><option>건강</option>
+            <option>육아</option><option>종교</option>
+            <option>기타</option>
         </select>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
@@ -385,7 +388,7 @@ let filterGenre  = '';
 let selectedSearch = null; // 알라딘 검색 선택 결과
 
 // 알라딘 TTB 키 (직접 입력)
-const ALADIN_TTB = 'YOUR_ALADIN_TTB_KEY';
+const ALADIN_TTB = 'ttbkkyaul03232310001';
 
 // ── 유틸 ────────────────────────────────────────────────────
 const $  = id => document.getElementById(id);
