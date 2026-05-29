@@ -388,7 +388,7 @@ let filterGenre  = '';
 let selectedSearch = null; // 알라딘 검색 선택 결과
 
 // 알라딘 TTB 키 (직접 입력)
-const ALADIN_TTB = 'ttbkkyaul03232310001';
+const ALADIN_TTB = 'YOUR_KEY';
 
 // ── 유틸 ────────────────────────────────────────────────────
 const $  = id => document.getElementById(id);
@@ -977,10 +977,8 @@ async function doSearch() {
   selectedSearch = null;
 
   try {
-    const url = `https://www.aladin.co.kr/ttb/api/ItemSearch.aspx`
-      + `?ttbkey=${ALADIN_TTB}&Query=${encodeURIComponent(q)}`
-      + `&QueryType=Title&MaxResults=10&SearchTarget=Book&output=js&Version=20131101`;
-    const res  = await fetch(url);
+    const FUNCTIONS_URL = 'https://asia-northeast3-readlog-c0280.cloudfunctions.net';
+const res = await fetch(`${FUNCTIONS_URL}/aladinSearch?q=${encodeURIComponent(q)}`);
     const data = await res.json();
     hideLoading();
 
