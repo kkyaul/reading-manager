@@ -737,6 +737,9 @@ async function openDetail(bookId) {
     </div>
     ${memoHtml ? `<div class="detail-section-title">// memo</div><div class="detail-text-block">${memoHtml}</div>` : ''}
     <hr class="t-divider">
+    <div class="detail-section-title">// reading log</div>
+    <div style="padding:0 14px 8px;">${dailyLogHtml}</div>
+    <hr class="t-divider">
     <div class="detail-section-title">// summary
       <button class="t-btn t-btn-sm" id="editSummaryBtn" style="float:right;width:auto;padding:3px 10px;font-size:0.72rem;">edit</button>
     </div>
