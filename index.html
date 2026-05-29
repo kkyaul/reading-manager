@@ -389,6 +389,7 @@ let selectedSearch = null; // 알라딘 검색 선택 결과
 
 // 알라딘 TTB 키 (직접 입력)
 const ALADIN_TTB = 'YOUR_KEY';
+const FUNCTIONS_URL = 'https://asia-northeast3-readlog-c0280.cloudfunctions.net';
 
 // ── 유틸 ────────────────────────────────────────────────────
 const $  = id => document.getElementById(id);
@@ -1033,8 +1034,8 @@ async function doSearch() {
   selectedSearch = null;
 
   try {
-    const FUNCTIONS_URL = 'https://asia-northeast3-readlog-c0280.cloudfunctions.net';
-const res = await fetch(`${FUNCTIONS_URL}/aladinSearch?q=${encodeURIComponent(q)}`);
+    // const FUNCTIONS_URL = 'https://asia-northeast3-readlog-c0280.cloudfunctions.net';
+    const res = await fetch(`${FUNCTIONS_URL}/aladinSearch?q=${encodeURIComponent(q)}`);
     const data = await res.json();
     hideLoading();
 
@@ -1095,32 +1096,63 @@ $('regCancelBtn').addEventListener('click', () => {
 $('regConfirmBtn').addEventListener('click', async () => {
   const title = $('regTitle').value.trim();
   if (!title) { toast('제목을 입력하세요.'); return; }
-
+ 
   showLoading('등록 중...');
-
-  const imgUrl = selectedSearch
+ 
+  // 알라딘 cover200 URL
+  const aladinUrl = selectedSearch
     ? (() => {
-        const raw   = selectedSearch.cover || '';
-        const fname = raw.split('/').pop();
-        const base  = raw.substring(0, raw.lastIndexOf('/'));
-        const parent= base.substring(0, base.lastIndexOf('/'));
+        const raw    = selectedSearch.cover || '';
+        const fname  = raw.split('/').pop();
+        const base   = raw.substring(0, raw.lastIndexOf('/'));
+        const parent = base.substring(0, base.lastIndexOf('/'));
         return fname ? parent + '/cover200/' + fname : raw;
       })()
     : '';
-
+ 
+  // 먼저 책 데이터 등록 (imageUrl은 일단 aladin URL로)
   const data = {
     title,
-    author:   $('regAuthor').value.trim(),
-    genre:    $('regGenre').value,
-    media:    $('regMedia').value,
-    imageUrl: imgUrl,
-    round:    1,
-    stopped:  false,
+    author:      $('regAuthor').value.trim(),
+    genre:       $('regGenre').value,
+    media:       $('regMedia').value,
+    imageUrl:    aladinUrl,
+    round:       1,
+    stopped:     false,
     readingDays: 0,
   };
-
-  const ref = await addBook(data);
-  allBooks.unshift({ id: ref.id, ...data });
+ 
+  const docRef = await addBook(data);
+  const bookId = docRef.id;
+ 
+  // Storage에 이미지 저장 (aladinUrl 있을 때만)
+  if (aladinUrl) {
+    try {
+      showLoading('표지 이미지 저장 중...');
+ 
+      // 알라딘 이미지를 Functions 프록시로 fetch → Blob 변환
+      // (CORS 문제로 직접 fetch 불가 → Functions URL 사용)
+      // Functions 프록시가 없는 경우 알라딘 URL 그대로 사용
+      let storageUrl = aladinUrl;
+      try {
+        // const FUNCTIONS_URL = 'YOUR_FUNCTIONS_BASE_URL'; // ← Functions URL 입력
+        const imgRes  = await fetch(`${FUNCTIONS_URL}/proxyImage?url=${encodeURIComponent(aladinUrl)}`);
+        if (imgRes.ok) {
+          const blob     = await imgRes.blob();
+          storageUrl     = await uploadCover(bookId, blob);
+          // Firestore imageUrl 업데이트
+          await updateBook(bookId, { imageUrl: storageUrl });
+          data.imageUrl = storageUrl;
+        }
+      } catch (_) {
+        // proxyImage Function 없으면 알라딘 URL 그대로 유지
+      }
+    } catch (e) {
+      Logger?.log?.('이미지 저장 실패: ' + e.message);
+    }
+  }
+ 
+  allBooks.unshift({ id: bookId, ...data });
   hideLoading();
   toast(`"${title}" 등록 완료`);
   $('registerForm').style.display = 'none';
