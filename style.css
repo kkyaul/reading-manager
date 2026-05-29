@@ -254,8 +254,8 @@ body::before {
   font-size: 0.78rem; color: var(--text2);
   line-height: 1.8; font-family: var(--font-sans);
 }
-.daily-book-entry .icon-start { color: var(--green); }
-.daily-book-entry .icon-done  { color: var(--yellow); }
+.daily-book-entry .icon-start { color: var(--green); font-size: 0.72rem; }
+.daily-book-entry .icon-done  { color: var(--yellow); font-size: 0.72rem; }
 .daily-empty {
   font-size: 0.75rem; color: var(--text4); font-style: italic;
 }

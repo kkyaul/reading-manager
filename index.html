@@ -474,7 +474,7 @@ function switchScreen(sc) {
   $('topBarTitle').textContent = tabTitles[sc] || 'shelf.io';
   if (sc === 'screenList')   renderBookList();
   if (sc === 'screenStats')  renderStats();
-  if (sc === 'screenLog')    renderDailyList();
+  if (sc === 'screenLog')  { $('logDate').value = today(); renderDailyList(); }
 }
 
 // ── 책 데이터 로드 ───────────────────────────────────────────
@@ -571,16 +571,22 @@ $('logAddBtn').addEventListener('click', async () => {
   entries.push({ title: book.title, status, page: page || '' });
   await setDailyRecord(date, entries);
 
-  // 시작일 / 완료일 업데이트
+  // 독서일수 +1 (시작/독서중/완료 모두)
+  const newDays = (book.readingDays || 0) + 1;
+  const updates = { readingDays: newDays };
+
+  // 시작일 업데이트
   if (status === 'start' && !book.startDate) {
-    await updateBook(bookId, { startDate: date });
-    allBooks = allBooks.map(b => b.id === bookId ? { ...b, startDate: date } : b);
+    updates.startDate = date;
   }
+  // 완료일 업데이트
   if (status === 'done' && !book.endDate) {
-    await updateBook(bookId, { endDate: date });
-    allBooks = allBooks.map(b => b.id === bookId ? { ...b, endDate: date } : b);
-    updateBookSelect();
+    updates.endDate = date;
   }
+ 
+  await updateBook(bookId, updates);
+  allBooks = allBooks.map(b => b.id === bookId ? { ...b, ...updates } : b);
+  if (status === 'done') updateBookSelect();
 
   hideLoading();
   toast(`${date} — "${book.title}" 기록 완료`);
@@ -592,7 +598,11 @@ $('logAddBtn').addEventListener('click', async () => {
 function renderBookList() {
   const el = $('bookList');
 
-  let books = [...allBooks];
+  let books = [...allBooks].sort((a, b) => {
+    const sa = a.startDate || '';
+    const sb = b.startDate || '';
+    return sb.localeCompare(sa); // 시작일 내림차순
+  });
 
   // 필터 적용
   if (filterStatus === 'reading') books = books.filter(b => !b.endDate && !b.stopped);
@@ -669,10 +679,43 @@ async function openDetail(bookId) {
   ]);
   if (!book) { el.innerHTML = '<div class="empty-state">book not found</div>'; return; }
 
+  // 실제 독서일 리스트: dailyRecords에서 해당 책 제목이 포함된 날짜 조회
+  let dailyLogHtml = '<span class="t-dim">— 없음 —</span>';
+  try {
+    if (book.startDate) {
+      const endDate  = book.endDate || today();
+      const records  = await getDailyRange(book.startDate, endDate);
+      const bookLogs = [];
+      Object.entries(records)
+        .sort(([a],[b]) => a.localeCompare(b))
+        .forEach(([date, rec]) => {
+          const matched = (rec.entries || []).filter(e =>
+            e.title === book.title || e.title.startsWith(book.title)
+          );
+          matched.forEach(e => {
+            const icon = e.status === 'start' ? ' [start]'
+                       : e.status === 'done'  ? ' [done]'
+                       : '';
+            const page = e.page ? ` p.${e.page}` : '';
+            bookLogs.push(`<div class="daily-book-entry" style="font-size:0.75rem;">
+              <span class="t-dim">${date}</span>  ${e.title}${icon}${page}
+            </div>`);
+          });
+        });
+      if (bookLogs.length > 0) dailyLogHtml = bookLogs.join('');
+    }
+  } catch (_) {}
+
   const scoreStr = book.score ? stars(book.score) : '—';
   const period   = book.startDate
-    ? (book.endDate ? `${book.startDate} ~ ${book.endDate}` : `${book.startDate} ~`)
-    : '—';
+    ? (book.endDate ? `${book.startDate} ~ ${book.endDate}` : `${book.startDate} ~`) : '—';
+  const statusTxt  = book.stopped ? 'stopped' : book.endDate ? 'done' : 'reading';
+  const statusCls  = book.stopped ? 't-dim'   : book.endDate ? 't-yellow' : 't-green';
+  
+  // 메모 줄바꿈 처리
+  const memoHtml   = book.memo
+    ? book.memo.replace(/\n/g, '<br>')
+    : '';
 
   el.innerHTML = `
     <div class="detail-cover-wrap">
@@ -689,9 +732,10 @@ async function openDetail(bookId) {
       <span class="detail-key">score </span> <span class="detail-val t-yellow">${scoreStr}</span>
       <span class="detail-key">media </span> <span class="detail-val">${book.media || '—'}</span>
       <span class="detail-key">round </span> <span class="detail-val">${book.round || 1}독</span>
-      <span class="detail-key">status</span> <span class="detail-val ${book.stopped?'t-dim':book.endDate?'t-yellow':'t-green'}">${book.stopped?'중단':book.endDate?'완료':'reading'}</span>
+      <span class="detail-key">status</span> <span class="detail-val ${statusCls}">${statusTxt}</span>
+      ${book.stoppedDate ? `<span class="detail-key">stopped</span> <span class="detail-val t-dim">${book.stoppedDate}</span>` : ''}
     </div>
-    ${book.memo ? `<div class="detail-section-title">// memo</div><div class="detail-text-block">${book.memo}</div>` : ''}
+    ${memoHtml ? `<div class="detail-section-title">// memo</div><div class="detail-text-block">${memoHtml}</div>` : ''}
     <hr class="t-divider">
     <div class="detail-section-title">// summary
       <button class="t-btn t-btn-sm" id="editSummaryBtn" style="float:right;width:auto;padding:3px 10px;font-size:0.72rem;">edit</button>
@@ -756,10 +800,17 @@ function openEditModal(book) {
   $('editMedia').value   = book.media || '';
   $('editRound').value   = book.round || 1;
   $('editStopped').value = book.stopped ? 'true' : 'false';
+  $('editStoppedDate').value  = book.stoppedDate || '';
+  $('stoppedDateGroup').style.display = book.stopped ? 'block' : 'none';
   $('editMemo').value    = book.memo || '';
   updateStarUI(book.score || 0);
   openModal('editModal');
 }
+
+// 중단 선택 시 중단일 필드 토글
+$('editStopped').addEventListener('change', e => {
+  $('stoppedDateGroup').style.display = e.target.value === 'true' ? 'block' : 'none';
+});
 
 // 별점 UI
 document.querySelectorAll('#editStars .star-btn').forEach(btn => {
@@ -778,6 +829,7 @@ function updateStarUI(v) {
 $('editModalClose').addEventListener('click', () => closeModal('editModal'));
 $('editSaveBtn').addEventListener('click', async () => {
   const id = $('editBookId').value;
+  const stopped = $('editStopped').value === 'true';
   const data = {
     title:     $('editTitle').value.trim(),
     author:    $('editAuthor').value.trim(),
@@ -787,7 +839,8 @@ $('editSaveBtn').addEventListener('click', async () => {
     score:     parseInt($('editScore').value) || 0,
     media:     $('editMedia').value,
     round:     parseInt($('editRound').value) || 1,
-    stopped:   $('editStopped').value === 'true',
+    stopped,
+    stoppedDate: stopped ? ($('editStoppedDate').value || '') : '',
     memo:      $('editMemo').value.trim(),
   };
   // 독서일수 계산 (날짜가 있으면 자동 계산)
