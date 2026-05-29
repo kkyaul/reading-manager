@@ -21,10 +21,10 @@
   --blue:      #40C4FF;
   --purple:    #CE93D8;
 
-  --text:      #E0E0E0;
-  --text2:     #999999;
-  --text3:     #555555;
-  --text4:     #333333;
+  --text:      #E8E8E8;
+  --text2:     #AAAAAA;
+  --text3:     #777777;
+  --text4:     #555555;
 
   --font-mono: 'JetBrains Mono', 'Courier New', monospace;
   --font-sans: 'Noto Sans KR', sans-serif;
@@ -470,12 +470,12 @@ body::before {
   padding: 20px; text-align: center;
 }
 .login-ascii {
-  font-size: 0.65rem; color: var(--text4);
+  font-size: 0.65rem; color: var(--text3);
   line-height: 1.4; margin-bottom: 20px;
   font-family: var(--font-mono);
 }
 .login-title { font-size: 1.2rem; color: var(--pink); font-weight: 600; margin-bottom: 6px; }
-.login-sub   { font-size: 0.8rem; color: var(--text3); margin-bottom: 28px; }
+.login-sub   { font-size: 0.8rem; color: var(--text2); margin-bottom: 28px; }
 .login-btn {
   display: inline-flex; align-items: center; gap: 8px;
   padding: 12px 24px;
@@ -529,7 +529,16 @@ body::before {
 }
 .star-btn.on { color: var(--yellow); }
 
-/* ── 유틸 ───────────────────────────────────────────────── */
+input[type="date"] {
+  color-scheme: dark;
+}
+.tab-icon-wrap {
+  font-size: 1.1rem; line-height: 1;
+  color: var(--text4); transition: color .2s;
+  font-family: var(--font-mono); font-weight: 400;
+  letter-spacing: -1px;
+}
+.tab-item.active .tab-icon-wrap { color: var(--pink); }
 .t-pink   { color: var(--pink); }
 .t-green  { color: var(--green); }
 .t-yellow { color: var(--yellow); }
